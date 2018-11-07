@@ -16,22 +16,15 @@ def user_directory_path(instance, filename):
 
 
 class Purchase(models.Model):
-    NotPaid = 'NP'
-    AdvancePaid = 'AP'
-    PaidUp = 'PU'
-    PAYMENT_STATUS_CHOICES = (
-        (NotPaid, 'Не оплачений'),
-        (AdvancePaid, 'Оплачений аванс'),
-        (PaidUp, 'Оплачений')
-        )
     customer = models.ForeignKey(Partner, verbose_name='Партнер', on_delete=models.PROTECT)
     company = models.ForeignKey(Company, verbose_name='Компанія', on_delete=models.PROTECT)
     invoice_number = models.CharField('Номер договору', max_length=30)
     invoice_date = models.DateField('Дата договору', default=now)
     products = models.ManyToManyField(Product, through='InvoiceLine', related_name='products',
                                    verbose_name='Товари', blank=True)
+    in_stock = models.BooleanfField('Доступно до продажу', default=False)
     value = models.DecimalField('Вартість робіт, грн.', max_digits=8, decimal_places=2, default=0)
-    currency = models.CharField('Валюта', max_length=12, default='грн')
+    currency = models.CharField('Валюта', max_length=12, default=settings.DEFAULT_CURRENCY)
     creator = models.ForeignKey(User, verbose_name='Створив', related_name='purchase_creators', on_delete=models.PROTECT)
     creation_date = models.DateField(auto_now_add=True)
     pdf_copy = ContentTypeRestrictedFileField('Електронний примірник', upload_to=user_directory_path,
@@ -42,10 +35,8 @@ class Purchase(models.Model):
                                               blank=True, null=True)
 
     class Meta:
-        unique_together = ('number', 'customer')
-        verbose_name = 'Договір'
-        verbose_name_plural = 'Договори'
-        ordering = ['-creation_date', 'customer', '-number']
+        verbose_name = 'Закупівля'
+        verbose_name_plural = 'Закупівлі'
 
     def __str__(self):
         return self.number + ' ' + self.customer.name
@@ -56,9 +47,18 @@ class Purchase(models.Model):
 
 
 class Payment(models.Model):
-    purchase = models.ForeignKey(Partner, verbose_name='Партнер', on_delete=models.PROTECT)
-    pay_date = models.DateField('Дата оплати', blank=True, null=True)
-    pay_value = models.DecimalField('Вартість робіт, грн.', max_digits=8, decimal_places=2, default=0)
+    PayOnDelivery = 'PD'
+    BankPayment = 'BP'
+    BankCard = 'BC'
+    PAYMENT_TYPE_CHOICES = (
+        (PayOnDelivery, 'Оплата при отриманні'),
+        (BankPayment, 'Банківський платіж'),
+        (BankCard, 'Оплата на картку')
+    )
+    purchase = models.ForeignKey(Partner, verbose_name='Партнер', on_delete=models.CASCADE)
+    payment_type = models.CharField('Тип платежу', max_length=2, choices=PAYMENT_TYPE_CHOICES, default='BP')
+    payment_date = models.DateField('Дата оплати', blank=True, null=True)
+    payment_value = models.DecimalField('Вартість робіт, грн.', max_digits=8, decimal_places=2, default=0)
 
     class Meta:
         verbose_name = 'Оплата'
