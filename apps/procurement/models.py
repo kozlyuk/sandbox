@@ -21,12 +21,12 @@ class Company(models.Model):
         ('wvat', _('With VAT')),
         ('wovat', _('Without VAT')),
     )
-    name = models.CharField(_('Name'), max_length=50)
-    fullname = models.CharField(_('Full name'), max_length=50)
+    name = models.CharField(_('Name'), max_length=45)
+    fullname = models.CharField(_('Full name'), max_length=255)
     address = models.CharField(_('Legal address'), max_length=255, blank=True)
     requisites = models.CharField(_('Requisites'), max_length=255, blank=True)
     bank_requisites = models.CharField(_('Bank details'), max_length=255, blank=True)
-    chief = models.CharField(_('Chief'), max_length=50, blank=True)
+    chief = models.CharField(_('Chief'), max_length=45, blank=True)
     phone = models.CharField(_('Phone'), max_length=13, blank=True)
     tax_system = models.CharField(_('Tax system'), max_length=5, choices=TAXATION_CHOICES, default='wvat')
 
@@ -39,7 +39,7 @@ class Company(models.Model):
 
 
 class Deal(models.Model):
-    number = models.CharField(_('Deal number'), max_length=30)
+    number = models.CharField(_('Deal number'), max_length=45)
     date = models.DateField(_('Deal date'), default=now)
     customer = models.ForeignKey(Partner, verbose_name=_('Partner'), on_delete=models.PROTECT)
     company = models.ForeignKey(Company, verbose_name=_('Company'), on_delete=models.PROTECT)
@@ -51,6 +51,7 @@ class Deal(models.Model):
                                                              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
                                               max_upload_size=26214400,
                                               blank=True, null=True)
+    # Creator and Date information
     creator = models.ForeignKey(User, verbose_name=_('Creator'), related_name='deals_creator', on_delete=models.PROTECT)
     date_created = models.DateTimeField(_("Date created"), auto_now_add=True)
     date_updated = models.DateTimeField(_("Date updated"), auto_now=True, db_index=True)
@@ -72,7 +73,7 @@ class Deal(models.Model):
 
 class Purchase(models.Model):
     deal = models.ForeignKey(Deal, verbose_name=_('Deal'), on_delete=models.PROTECT)
-    invoice_number = models.CharField(_('Invoice number'), max_length=30)
+    invoice_number = models.CharField(_('Invoice number'), max_length=45)
     invoice_date = models.DateField(_('Invoice date'), default=now)
     products = models.ManyToManyField(Product, through='InvoiceLine', related_name='products',
                                    verbose_name=_('Goods'), blank=True)
@@ -119,8 +120,8 @@ class Payment(models.Model):
     )
     purchase = models.ForeignKey(Partner, verbose_name=_('Partner'), on_delete=models.CASCADE)
     payment_type = models.CharField(_('Payment type'), max_length=2, choices=PAYMENT_TYPE_CHOICES, default='BP')
-    payment_date = models.DateField(_('Payment date'), blank=True, null=True)
-    payment_value = models.DecimalField(_('Value'), max_digits=8, decimal_places=2, default=0)
+    payment_date = models.DateField(_('Payment date'), default=now)
+    payment_value = models.DecimalField(_('Value'), max_digits=8, decimal_places=2)
     # Creator and Date information
     creator = models.ForeignKey(User, verbose_name=_('Creator'), related_name=_('payments_creator'), on_delete=models.PROTECT)
     date_created = models.DateTimeField(_("Date created"), auto_now_add=True)
@@ -139,5 +140,5 @@ class InvoiceLine(models.Model):
     purchase = models.ForeignKey(Purchase, verbose_name=_('Purchase'), on_delete=models.PROTECT)
     stockrecord = models.OneToOneField(StockRecord, null=True, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(_('Amount'), default=1)
-    units = models.CharField(_('Units'), max_length=12, default=_('pcs.'))
+    units = models.CharField(_('Units'), max_length=16, default=_('pcs.'))
     unit_price = models.DecimalField(_('Unit price'), max_digits=8, decimal_places=2, default=0)
